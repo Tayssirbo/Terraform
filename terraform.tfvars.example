@@ -1,0 +1,48 @@
+# Copy to terraform.tfvars and fill in the three required values below.
+# Do not commit terraform.tfvars — it identifies your subscription and network.
+
+###############################################################################
+# Required — terraform will prompt for these if left unset
+###############################################################################
+
+subscription_id = "00000000-0000-0000-0000-000000000000"
+
+# Corporate ranges only. Validation rejects 0.0.0.0/0.
+# Port 8000 is an unauthenticated inference endpoint.
+allowed_source_cidrs = [
+  "203.0.113.0/24",
+]
+
+cost_center = "REPLACE-ME"
+
+###############################################################################
+# Optional — defaults are sensible, override as needed
+###############################################################################
+
+location = "germanywestcentral"
+
+# Must be a member of the NCADSH100v5 family. Default: 1x H100 NVL 94 GB, 40 vCPU.
+vm_size = "Standard_NC40ads_H100_v5"
+
+ssh_public_key_path = "~/.ssh/id_rsa.pub"
+
+# vLLM OpenAI-compatible endpoint, Open WebUI.
+service_ports = ["8000", "3000"]
+
+# 550 or later supports Hopper (H100).
+nvidia_driver_branch = "550"
+
+# Spot is substantially cheaper but evictable at ~30s notice.
+use_spot = false
+
+models_disk_size_gb = 128
+models_disk_type    = "StandardSSD_LRS"
+
+auto_shutdown_enabled            = true
+auto_shutdown_time               = "1900"
+auto_shutdown_timezone           = "Romance Standard Time"
+auto_shutdown_notification_email = "tayssir.ben-othmen@oddo-bhf.com"
+
+# Requires the EncryptionAtHost subscription feature and SKU support.
+# Leave false until both are confirmed — otherwise the deployment fails.
+encryption_at_host_enabled = false

@@ -1,0 +1,136 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - jq
+  - git
+  - parted
+  - python3-pip
+  - python3-venv
+
+write_files:
+  # Block CUDA 13.2: known-bad build that can silently corrupt model outputs.
+  - path: /etc/apt/preferences.d/99-block-cuda-13-2
+    permissions: "0644"
+    content: |
+      Package: cuda-toolkit-13-2 cuda-13-2 cuda-runtime-13-2 cuda-drivers-13-2
+      Pin: version *
+      Pin-Priority: -1
+
+  - path: /opt/bootstrap.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      exec > >(tee -a /var/log/stack-bootstrap.log) 2>&1
+      echo "=== bootstrap started $(date -Is) ==="
+
+      # ---------------------------------------------------------- model disk
+      # Guarded: never reformat a disk that already holds weights.
+      DISK=/dev/disk/azure/scsi1/lun0
+      for _ in $(seq 1 30); do [ -b "$DISK" ] && break; sleep 2; done
+
+      if [ -b "$DISK" ]; then
+        PART="$${DISK}-part1"
+        if ! blkid "$PART" >/dev/null 2>&1; then
+          echo "formatting $DISK"
+          parted "$DISK" --script mklabel gpt mkpart primary ext4 0% 100%
+          sleep 5
+          mkfs.ext4 -F "$PART"
+        else
+          echo "$PART already formatted, leaving it alone"
+        fi
+        mkdir -p /models
+        UUID=$(blkid -s UUID -o value "$PART")
+        if ! grep -q "$UUID" /etc/fstab; then
+          echo "UUID=$UUID /models ext4 defaults,nofail 0 2" >> /etc/fstab
+        fi
+        mount -a
+        chown -R ${admin_username}:${admin_username} /models
+      else
+        echo "WARNING: data disk not found; /models will be on the OS disk"
+        mkdir -p /models
+        chown -R ${admin_username}:${admin_username} /models
+      fi
+
+      # ----------------------------------------------------------- gpu driver
+      %{~ if install_nvidia_driver ~}
+      echo "installing NVIDIA driver branch ${nvidia_driver_branch}"
+      cd /tmp
+      curl -fsSLO https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
+      dpkg -i cuda-keyring_1.1-1_all.deb
+      apt-get update
+
+      # Try the pinned branch, then the open variant, then whatever the distro
+      # recommends. A wrong branch degrades rather than fails the build.
+      if ! apt-get install -y "nvidia-driver-${nvidia_driver_branch}"; then
+        if ! apt-get install -y "nvidia-driver-${nvidia_driver_branch}-open"; then
+          echo "branch ${nvidia_driver_branch} unavailable, falling back to ubuntu-drivers"
+          apt-get install -y ubuntu-drivers-common
+          ubuntu-drivers install --gpgpu || ubuntu-drivers autoinstall
+        fi
+      fi
+      %{~ endif ~}
+
+      # --------------------------------------------------------------- docker
+      install -m 0755 -d /etc/apt/keyrings
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      . /etc/os-release
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" \
+        > /etc/apt/sources.list.d/docker.list
+      apt-get update
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+      usermod -aG docker ${admin_username}
+      systemctl enable --now docker
+
+      # ----------------------------------------------- nvidia container toolkit
+      curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+        | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+      curl -fsSL https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+        | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+        > /etc/apt/sources.list.d/nvidia-container-toolkit.list
+      apt-get update
+      apt-get install -y nvidia-container-toolkit
+      nvidia-ctk runtime configure --runtime=docker
+      systemctl restart docker
+
+      # ------------------------------------------------------- python tooling
+      pip3 install --no-cache-dir "huggingface_hub[cli]"
+
+      mkdir -p /opt/stack
+      chown -R ${admin_username}:${admin_username} /opt/stack
+
+      touch /var/lib/cloud/stack-bootstrap-complete
+      echo "=== bootstrap finished $(date -Is) ==="
+
+      %{~ if install_nvidia_driver ~}
+      echo "rebooting to load the GPU driver"
+      shutdown -r +1 "rebooting to load the NVIDIA driver"
+      %{~ endif ~}
+
+  - path: /opt/stack/README
+    permissions: "0644"
+    content: |
+      LLM inference stack.
+
+      Model weights live on /models, a persistent managed disk. It survives
+      deallocation. The local and temp disks do not — never put weights there.
+
+      Bootstrap log:  /var/log/stack-bootstrap.log
+      Completion flag: /var/lib/cloud/stack-bootstrap-complete
+
+      Verify GPU:     nvidia-smi
+      Verify disk:    df -h /models
+      Start stack:    cd /opt/stack && docker compose up -d
+      Endpoint:       http://<vm-ip>:8000/v1
+      WebUI:          http://<vm-ip>:3000
+
+runcmd:
+  - [ bash, /opt/bootstrap.sh ]
+
+final_message: "cloud-init finished after $UPTIME seconds. Check /var/log/stack-bootstrap.log"
