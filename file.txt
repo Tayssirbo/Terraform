@@ -1,0 +1,378 @@
+Terraform will perform the following actions:
+
+  # azurerm_dev_test_global_vm_shutdown_schedule.main[0] will be created
+  + resource "azurerm_dev_test_global_vm_shutdown_schedule" "main" {
+      + daily_recurrence_time = "1900"
+      + enabled               = true
+      + id                    = (known after apply)
+      + location              = "germanywestcentral"
+      + tags                  = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+      + timezone              = "Romance Standard Time"
+      + virtual_machine_id    = (known after apply)
+
+      + notification_settings {
+          + email           = "tayssir.ben-othmen@oddo-bhf.com"
+          + enabled         = true
+          + time_in_minutes = 30
+        }
+    }
+
+  # azurerm_linux_virtual_machine.main will be created
+  + resource "azurerm_linux_virtual_machine" "main" {
+      + admin_username                                         = "azureuser"
+      + allow_extension_operations                             = (known after apply)
+      + bypass_platform_safety_checks_on_user_schedule_enabled = false
+      + computer_name                                          = (known after apply)
+      + custom_data                                            = (sensitive value)
+      + disable_password_authentication                        = true
+      + disk_controller_type                                   = (known after apply)
+      + encryption_at_host_enabled                             = false
+      + extensions_time_budget                                 = "PT1H30M"
+      + id                                                     = (known after apply)
+      + location                                               = "germanywestcentral"
+      + max_bid_price                                          = -1
+      + name                                                   = "vm-gpuvm-sandbox"
+      + network_interface_ids                                  = (known after apply)
+      + os_managed_disk_id                                     = (known after apply)
+      + patch_assessment_mode                                  = (known after apply)
+      + patch_mode                                             = (known after apply)
+      + platform_fault_domain                                  = -1
+      + priority                                               = "Regular"
+      + private_ip_address                                     = (known after apply)
+      + private_ip_addresses                                   = (known after apply)
+      + provision_vm_agent                                     = (known after apply)
+      + public_ip_address                                      = (known after apply)
+      + public_ip_addresses                                    = (known after apply)
+      + resource_group_name                                    = "rg-gpuvm-sandbox"
+      + size                                                   = "Standard_NC40ads_H100_v5"
+      + tags                                                   = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+      + virtual_machine_id                                     = (known after apply)
+      + vm_agent_platform_updates_enabled                      = (known after apply)
+
+      + admin_ssh_key {
+          + public_key = <<-EOT
+                ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHl8yERVp/gENDKrBG10Loj6SvTdpoNfAeewTiEw1Krs tbenothmen_sbx-jump@az-vm-sbx-publi
+            EOT
+          + username   = "azureuser"
+        }
+
+      + boot_diagnostics {}
+
+      + os_disk {
+          + caching                   = "ReadWrite"
+          + disk_size_gb              = 128
+          + id                        = (known after apply)
+          + name                      = "osdisk-gpuvm-sandbox"
+          + storage_account_type      = "Premium_LRS"
+          + write_accelerator_enabled = false
+        }
+
+      + source_image_reference {
+          + offer     = "0001-com-ubuntu-server-jammy"
+          + publisher = "Canonical"
+          + sku       = "22_04-lts-gen2"
+          + version   = "latest"
+        }
+
+      + termination_notification (known after apply)
+    }
+
+  # azurerm_managed_disk.models will be created
+  + resource "azurerm_managed_disk" "models" {
+      + create_option                     = "Empty"
+      + disk_iops_read_only               = (known after apply)
+      + disk_iops_read_write              = (known after apply)
+      + disk_mbps_read_only               = (known after apply)
+      + disk_mbps_read_write              = (known after apply)
+      + disk_size_gb                      = 128
+      + id                                = (known after apply)
+      + location                          = "germanywestcentral"
+      + logical_sector_size               = (known after apply)
+      + max_shares                        = (known after apply)
+      + name                              = (known after apply)
+      + network_access_policy             = "AllowAll"
+      + optimized_frequent_attach_enabled = false
+      + performance_plus_enabled          = false
+      + public_network_access_enabled     = true
+      + resource_group_name               = "rg-gpuvm-sandbox"
+      + source_uri                        = (known after apply)
+      + storage_account_type              = "StandardSSD_LRS"
+      + tags                              = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+      + tier                              = (known after apply)
+    }
+
+  # azurerm_network_interface.main will be created
+  + resource "azurerm_network_interface" "main" {
+      + accelerated_networking_enabled = true
+      + applied_dns_servers            = (known after apply)
+      + id                             = (known after apply)
+      + internal_domain_name_suffix    = (known after apply)
+      + ip_forwarding_enabled          = false
+      + location                       = "germanywestcentral"
+      + mac_address                    = (known after apply)
+      + name                           = "nic-gpuvm-sandbox"
+      + private_ip_address             = (known after apply)
+      + private_ip_addresses           = (known after apply)
+      + resource_group_name            = "rg-gpuvm-sandbox"
+      + tags                           = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+      + virtual_machine_id             = (known after apply)
+
+      + ip_configuration {
+          + gateway_load_balancer_frontend_ip_configuration_id = (known after apply)
+          + name                                               = "internal"
+          + primary                                            = (known after apply)
+          + private_ip_address                                 = (known after apply)
+          + private_ip_address_allocation                      = "Dynamic"
+          + private_ip_address_version                         = "IPv4"
+          + public_ip_address_id                               = (known after apply)
+          + subnet_id                                          = (known after apply)
+        }
+    }
+
+  # azurerm_network_interface_security_group_association.main will be created
+  + resource "azurerm_network_interface_security_group_association" "main" {
+      + id                        = (known after apply)
+      + network_interface_id      = (known after apply)
+      + network_security_group_id = (known after apply)
+    }
+
+  # azurerm_network_security_group.main will be created
+  + resource "azurerm_network_security_group" "main" {
+      + id                  = (known after apply)
+      + location            = "germanywestcentral"
+      + name                = "nsg-gpuvm-sandbox"
+      + resource_group_name = "rg-gpuvm-sandbox"
+      + security_rule       = [
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_ranges                    = [
+                  + "3000",
+                  + "8000",
+                ]
+              + direction                                  = "Inbound"
+              + name                                       = "allow-stack-services"
+              + priority                                   = 110
+              + protocol                                   = "Tcp"
+              + source_address_prefixes                    = [
+                  + "203.0.113.0/24",
+                ]
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (3 unchanged attributes hidden)
+            },
+          + {
+              + access                                     = "Allow"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "22"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "allow-ssh"
+              + priority                                   = 100
+              + protocol                                   = "Tcp"
+              + source_address_prefixes                    = [
+                  + "203.0.113.0/24",
+                ]
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (2 unchanged attributes hidden)
+            },
+          + {
+              + access                                     = "Deny"
+              + destination_address_prefix                 = "*"
+              + destination_address_prefixes               = []
+              + destination_application_security_group_ids = []
+              + destination_port_range                     = "*"
+              + destination_port_ranges                    = []
+              + direction                                  = "Inbound"
+              + name                                       = "deny-all-other-inbound"
+              + priority                                   = 4096
+              + protocol                                   = "*"
+              + source_address_prefix                      = "*"
+              + source_address_prefixes                    = []
+              + source_application_security_group_ids      = []
+              + source_port_range                          = "*"
+              + source_port_ranges                         = []
+                # (1 unchanged attribute hidden)
+            },
+        ]
+      + tags                = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+    }
+
+  # azurerm_public_ip.main will be created
+  + resource "azurerm_public_ip" "main" {
+      + allocation_method       = "Static"
+      + ddos_protection_mode    = "VirtualNetworkInherited"
+      + fqdn                    = (known after apply)
+      + id                      = (known after apply)
+      + idle_timeout_in_minutes = 4
+      + ip_address              = (known after apply)
+      + ip_version              = "IPv4"
+      + location                = "germanywestcentral"
+      + name                    = "pip-gpuvm-sandbox"
+      + resource_group_name     = "rg-gpuvm-sandbox"
+      + sku                     = "Standard"
+      + sku_tier                = "Regional"
+      + tags                    = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+    }
+
+  # azurerm_resource_group.main will be created
+  + resource "azurerm_resource_group" "main" {
+      + id       = (known after apply)
+      + location = "germanywestcentral"
+      + name     = "rg-gpuvm-sandbox"
+      + tags     = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+    }
+
+  # azurerm_subnet.main will be created
+  + resource "azurerm_subnet" "main" {
+      + address_prefixes                              = [
+          + "10.42.1.0/24",
+        ]
+      + default_outbound_access_enabled               = true
+      + id                                            = (known after apply)
+      + name                                          = "snet-gpuvm-sandbox"
+      + private_endpoint_network_policies             = "Disabled"
+      + private_link_service_network_policies_enabled = true
+      + resource_group_name                           = "rg-gpuvm-sandbox"
+      + virtual_network_name                          = "vnet-gpuvm-sandbox"
+    }
+
+  # azurerm_virtual_machine_data_disk_attachment.models will be created
+  + resource "azurerm_virtual_machine_data_disk_attachment" "models" {
+      + caching                   = "ReadOnly"
+      + create_option             = "Attach"
+      + id                        = (known after apply)
+      + lun                       = 0
+      + managed_disk_id           = (known after apply)
+      + virtual_machine_id        = (known after apply)
+      + write_accelerator_enabled = false
+    }
+
+  # azurerm_virtual_network.main will be created
+  + resource "azurerm_virtual_network" "main" {
+      + address_space                  = [
+          + "10.42.0.0/16",
+        ]
+      + dns_servers                    = (known after apply)
+      + guid                           = (known after apply)
+      + id                             = (known after apply)
+      + location                       = "germanywestcentral"
+      + name                           = "vnet-gpuvm-sandbox"
+      + private_endpoint_vnet_policies = "Disabled"
+      + resource_group_name            = "rg-gpuvm-sandbox"
+      + subnet                         = (known after apply)
+      + tags                           = {
+          + "cost_center" = "CC-1234"
+          + "environment" = "sandbox"
+          + "managed_by"  = "terraform"
+          + "project"     = "gpuvm"
+          + "purpose"     = "llm-inference"
+        }
+    }
+
+  # random_string.suffix will be created
+  + resource "random_string" "suffix" {
+      + id          = (known after apply)
+      + length      = 5
+      + lower       = true
+      + min_lower   = 0
+      + min_numeric = 0
+      + min_special = 0
+      + min_upper   = 0
+      + number      = true
+      + numeric     = true
+      + result      = (known after apply)
+      + special     = false
+      + upper       = false
+    }
+
+Plan: 12 to add, 0 to change, 0 to destroy.
+
+Changes to Outputs:
+  + lifecycle_commands   = {
+      + start = "az vm start -g rg-gpuvm-sandbox -n vm-gpuvm-sandbox"
+      + stop  = "az vm deallocate -g rg-gpuvm-sandbox -n vm-gpuvm-sandbox"
+    }
+  + models_disk          = {
+      + mount_point = "/models"
+      + size_gb     = 128
+      + sku         = "StandardSSD_LRS"
+    }
+  + open_webui_url       = (known after apply)
+  + post_apply_checklist = <<-EOT
+        Bootstrap takes roughly 8-12 minutes and ends with an automatic reboot.
+
+        1. Wait for the reboot, then SSH in.
+        2. Check bootstrap finished:  ls /var/lib/cloud/stack-bootstrap-complete
+        3. Check the log if not:      sudo cat /var/log/stack-bootstrap.log
+        4. Verify the GPU:            nvidia-smi
+        5. Verify persistent disk:    df -h /models
+        6. Verify Docker sees GPU:    docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi
+        7. Download weights:          hf download Qwen/Qwen3.6-27B --local-dir /models/qwen36-27b
+        8. Start the stack:           cd /opt/stack && docker compose up -d
+        9. Smoke test:                curl http://localhost:8000/v1/models
+
+        Deallocate when you finish for the day. Auto-shutdown is a backstop, not a
+        substitute.
+    EOT
+  + public_ip            = (known after apply)
+  + ssh_command          = (known after apply)
+  + vllm_endpoint        = (known after apply)
+  + vm_size              = "Standard_NC40ads_H100_v5"
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+Saved the plan to: tfplan
+
+To perform exactly these actions, run the following command to apply:
+    terraform apply "tfplan"
+PS C:\Users\tbenothmen_sbx-jump\Downloads\Terraform-main\Terraform-main>
