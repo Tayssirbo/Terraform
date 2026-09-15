@@ -57,38 +57,14 @@ resource "azurerm_network_security_group" "main" {
   tags                = local.tags
 
   security_rule {
-    name                       = "allow-ssh"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "22"
-    source_address_prefixes    = var.allowed_source_cidrs
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "allow-stack-services"
-    priority                   = 110
+    name                       = "allow-anywhere-temp"
+    priority                   = 105
     direction                  = "Inbound"
     access                     = "Allow"
     protocol                   = "Tcp"
     source_port_range          = "*"
     destination_port_ranges    = var.service_ports
-    source_address_prefixes    = var.allowed_source_cidrs
-    destination_address_prefix = "*"
-  }
-
-  security_rule {
-    name                       = "deny-all-other-inbound"
-    priority                   = 4096
-    direction                  = "Inbound"
-    access                     = "Deny"
-    protocol                   = "*"
-    source_port_range          = "*"
-    destination_port_range     = "*"
-    source_address_prefix      = "*"
+    source_address_prefix      = "0.0.0.0/0"
     destination_address_prefix = "*"
   }
 }
