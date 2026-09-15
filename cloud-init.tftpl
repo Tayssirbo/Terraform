@@ -130,6 +130,60 @@ write_files:
       Endpoint:       http://<vm-ip>:8000/v1
       WebUI:          http://<vm-ip>:3000
 
+  - path: /opt/stack/compose.yaml
+    permissions: "0644"
+    content: |
+      services:
+        vllm:
+          image: vllm/vllm-openai:latest
+          command:
+            - --model
+            - /models/qwen36-27b
+            - --served-model-name
+            - qwen36-27b
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --enable-auto-tool-choice
+            - --tool-call-parser
+            - hermes
+            - --reasoning-parser
+            - qwen3
+            # Hybrid Mamba/attention model: default max_num_seqs (1024) needs more
+            # Mamba cache blocks than fit in the KV cache budget; cap it.
+            - --max-num-seqs
+            - "512"
+          ports:
+            - "8000:8000"
+          volumes:
+            - /models:/models:ro
+          ipc: host
+          deploy:
+            resources:
+              reservations:
+                devices:
+                  - driver: nvidia
+                    count: all
+                    capabilities: [gpu]
+          restart: unless-stopped
+
+        open-webui:
+          image: ghcr.io/open-webui/open-webui:main
+          environment:
+            OPENAI_API_BASE_URL: http://vllm:8000/v1
+            OPENAI_API_KEY: dummy
+          ports:
+            - "3000:8080"
+          volumes:
+            - open-webui:/app/backend/data
+          depends_on:
+            - vllm
+          restart: unless-stopped
+
+      volumes:
+        open-webui:
+
 runcmd:
   - [ bash, /opt/bootstrap.sh ]
 
