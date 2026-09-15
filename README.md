@@ -6,26 +6,6 @@ schedule.
 
 ---
 
-## Decisions you need to make
-
-Terraform cannot determine these. The first three are required and `apply` will
-prompt for them if unset; the rest have defaults that may not suit you.
-
-| # | Decision | Where | Notes |
-|---|---|---|---|
-| 1 | **Subscription ID** | `subscription_id` | The sandbox subscription. |
-| 2 | **Corporate CIDR ranges** | `allowed_source_cidrs` | Which networks may reach SSH and port 8000. Validation rejects `0.0.0.0/0`. Ask Network or Security if you don't know the ranges. |
-| 3 | **Cost centre code** | `cost_center` | Tagged on every resource for chargeback. |
-| 4 | **Region** | `location` | Defaults to `germanywestcentral`. Must match the region where you hold NCADSH100v5 quota. |
-| 5 | **VM SKU** | `vm_size` | Defaults to `Standard_NC40ads_H100_v5` (1× H100 NVL 94 GB). Must be in the NCADSH100v5 family. |
-| 6 | **Encryption at host** | `encryption_at_host_enabled` | Defaults to false. See "Security items" below. |
-| 7 | **Shutdown time** | `auto_shutdown_time` | Defaults to 19:00 Paris time. |
-
-Two further items are outside Terraform entirely and are covered in
-Prerequisites: **GPU quota approval** and **resource provider registration**.
-
----
-
 ## Prerequisites
 
 ### 1. Tools
@@ -45,28 +25,7 @@ ls ~/.ssh/id_rsa.pub || ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
 
 If you generate an ed25519 key, set `ssh_public_key_path` accordingly.
 
-### 3. GPU quota — do this first, it is the long pole
-
-Quota is an approval workflow, not a Terraform resource. The azurerm provider
-has never supported it. Requests on GPU families often fall through to manual
-support review, so file early.
-
-Check what you currently hold:
-
-```bash
-az vm list-usage --location germanywestcentral -o table | grep -i "H100"
-```
-
-If the `Standard NCADSH100v5 Family vCPUs` limit is below 40, request an
-increase in the portal under **Quotas → Compute**, selecting that family.
-Justification text:
-
-> AI R&D sandbox for internal LLM inference experiments. Single GPU VM,
-> short-term pay-as-you-go, no production workloads, no customer data.
-
-Do not run `apply` until quota is granted. It will fail.
-
-### 4. Resource provider registration
+### 3. Resource provider registration
 
 The auto-shutdown schedule needs `Microsoft.DevTestLab`:
 
@@ -78,7 +37,7 @@ az provider show --namespace Microsoft.DevTestLab --query registrationState
 Wait for `Registered`. Alternatively set `auto_shutdown_enabled = false` and
 manage deallocation yourself — but then nothing catches a forgotten VM.
 
-### 5. Confirm the SKU exists and is unrestricted in your region
+### 4. Confirm the SKU exists and is unrestricted in your region
 
 ```bash
 az vm list-skus --location germanywestcentral --size Standard_NC40ads_H100_v5 \
@@ -95,7 +54,7 @@ An empty `restrictions` column means it is available to you.
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
-# edit terraform.tfvars — at minimum items 1-3 from the decisions table
+# edit terraform.tfvars — at minimum items 1-2 from the decisions table
 
 terraform init
 terraform plan     # read it; confirm the SKU and region are what you expect
@@ -121,7 +80,18 @@ df -h /models                                # persistent disk mounted
 docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi
 
 hf download Qwen/Qwen3.6-27B --local-dir /models/qwen36-27b
+
+cd /opt/stack
+docker compose up -d
+docker compose ps
 ```
+
+Open WebUI is available at `http://<public-ip>:3000`. The vLLM
+OpenAI-compatible API is available at `http://<public-ip>:8000/v1`.
+
+The root [compose.yaml](compose.yaml) mirrors the file created on the VM at
+`/opt/stack/compose.yaml`. Both run vLLM with the `qwen36-27b` served model
+name, Qwen3 reasoning parser, and Hermes tool-call parser.
 
 ### Daily lifecycle
 
@@ -160,9 +130,11 @@ Only set `encryption_at_host_enabled = true` once that reports `Registered`.
 Enabling it otherwise fails the deployment. Data at rest is encrypted with
 platform-managed keys regardless.
 
-**The inference endpoint is unauthenticated.** vLLM on port 8000 has no auth
-layer. The NSG is the only control, which is why `allowed_source_cidrs` is
-required and why `0.0.0.0/0` is rejected.
+**The inference endpoint is unauthenticated and public.** The temporary NSG
+rule `allow-anywhere-temp` (priority 105) permits any IPv4 address to reach
+ports 8000 (vLLM) and 3000 (Open WebUI). SSH is not allowed by a custom NSG
+rule. Do not send sensitive prompts or expose this VM beyond the intended
+temporary use.
 
 ---
 
@@ -188,9 +160,5 @@ than fails.
 **Why bootstrap is a script file.** cloud-init runs inline `runcmd` strings
 through `sh`, not bash. `set -o pipefail` is not POSIX and would fail there.
 
----
 
-## Not validated
 
-This configuration has not been run through `terraform validate` or `plan`
-against a live subscription. Run `terraform plan` and read it before applying.
