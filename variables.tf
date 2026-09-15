@@ -7,21 +7,6 @@ variable "subscription_id" {
   type        = string
 }
 
-variable "allowed_source_cidrs" {
-  description = <<-EOT
-    Source CIDR ranges permitted to reach SSH and the service ports.
-
-    Must be corporate ranges. The inference endpoint on port 8000 has no
-    authentication of its own — anyone who can reach it can use the GPU.
-  EOT
-  type        = list(string)
-
-  validation {
-    condition     = !contains(var.allowed_source_cidrs, "0.0.0.0/0")
-    error_message = "0.0.0.0/0 is not permitted. Specify corporate CIDR ranges."
-  }
-}
-
 variable "cost_center" {
   description = "Cost centre code for tagging and chargeback."
   type        = string
@@ -105,7 +90,7 @@ variable "admin_username" {
 variable "ssh_public_key_path" {
   description = "Path to an existing SSH public key. Generate with: ssh-keygen -t ed25519"
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
+  default     = "~/.ssh/id_ed25519.pub"
 }
 
 variable "os_disk_size_gb" {
