@@ -5,15 +5,9 @@
 # Required — terraform will prompt for these if left unset
 ###############################################################################
 
-subscription_id = "00000000-0000-0000-0000-000000000000"
+subscription_id = "6f75b3f3-813d-41e7-bd43-c1d55ae4c406"
 
-# Corporate ranges only. Validation rejects 0.0.0.0/0.
-# Port 8000 is an unauthenticated inference endpoint.
-allowed_source_cidrs = [
-  "203.0.113.0/24",
-]
-
-cost_center = "REPLACE-ME"
+cost_center = "CC-1234"
 
 ###############################################################################
 # Optional — defaults are sensible, override as needed
@@ -24,7 +18,7 @@ location = "germanywestcentral"
 # Must be a member of the NCADSH100v5 family. Default: 1x H100 NVL 94 GB, 40 vCPU.
 vm_size = "Standard_NC40ads_H100_v5"
 
-ssh_public_key_path = "~/.ssh/id_rsa.pub"
+ssh_public_key_path = "~/.ssh/id_ed25519.pub"
 
 # vLLM OpenAI-compatible endpoint, Open WebUI.
 service_ports = ["8000", "3000"]
